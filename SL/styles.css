@@ -1,0 +1,46 @@
+  text-align: center;
+    background-color: #f0f0f0;
+}
+
+h1 {
+    margin: 20px 0;
+}
+
+#game {
+    display: inline-block;
+    margin-top: 20px;
+}
+
+.cell {
+    width: 30px;
+    height: 30px;
+    background-color: #ccc;
+    border: 1px solid #999;
+    display: inline-block;
+    vertical-align: top;
+    cursor: pointer;
+    position: relative;
+}
+
+.cell.revealed {
+    background-color: #ddd;
+    cursor: default;
+}
+
+.cell.flagged {
+    background-color: red;
+    cursor: default;
+}
+
+.cell.revealed.mine {
+    background-color: red;
+}
+
+.cell.revealed.number {
+    background-color: #eee;
+    color: black;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
