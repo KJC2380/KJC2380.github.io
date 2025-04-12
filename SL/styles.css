@@ -1,4 +1,6 @@
-  text-align: center;
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
     background-color: #f0f0f0;
 }
 
@@ -7,7 +9,11 @@ h1 {
 }
 
 #game {
-    display: inline-block;
+    display: grid;
+    grid-template-columns: repeat(9, 30px);
+    grid-template-rows: repeat(9, 30px);
+    gap: 2px;
+    justify-content: center;
     margin-top: 20px;
 }
 
@@ -16,10 +22,11 @@ h1 {
     height: 30px;
     background-color: #ccc;
     border: 1px solid #999;
-    display: inline-block;
-    vertical-align: top;
     cursor: pointer;
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .cell.revealed {
@@ -40,7 +47,4 @@ h1 {
     background-color: #eee;
     color: black;
     font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
