@@ -10,8 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初始化游戏板
     function initBoard() {
         gameDiv.innerHTML = '';
+        gameDiv.style.gridTemplateColumns = `repeat(${COLS}, 30px)`;
+        gameDiv.style.gridTemplateRows = `repeat(${ROWS}, 30px)`;
+
         for (let r = 0; r < ROWS; r++) {
-            const row = [];
             for (let c = 0; c < COLS; c++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
@@ -23,9 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     toggleFlag(r, c);
                 });
                 gameDiv.appendChild(cell);
-                row.push(cell);
+                board.push({ element: cell, hasMine: false, isRevealed: false, adjacentMines: 0, flagged: false });
             }
-            board.push(row);
         }
 
         // 随机放置地雷
@@ -40,8 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
         while (minesPlaced < MINES) {
             const r = Math.floor(Math.random() * ROWS);
             const c = Math.floor(Math.random() * COLS);
-            if (!board[r][c].hasMine) {
-                board[r][c].hasMine = true;
+            if (!board[r * COLS + c].hasMine) {
+                board[r * COLS + c].hasMine = true;
                 minesPlaced++;
             }
         }
@@ -51,8 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateNumbers() {
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
-                if (!board[r][c].hasMine) {
-                    board[r][c].adjacentMines = countAdjacentMines(r, c);
+                if (!board[r * COLS + c].hasMine) {
+                    board[r * COLS + c].adjacentMines = countAdjacentMines(r, c);
                 }
             }
         }
@@ -65,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let dc = -1; dc <= 1; dc++) {
                 const nr = r + dr;
                 const nc = c + dc;
-                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc].hasMine) {
+                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr * COLS + nc].hasMine) {
                     count++;
                 }
             }
@@ -75,23 +76,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 揭示单元格
     function revealCell(r, c) {
-        if (gameOver || board[r][c].isRevealed || board[r][c].flagged) return;
+        if (gameOver || board[r * COLS + c].isRevealed || board[r * COLS + c].flagged) return;
 
-        board[r][c].isRevealed = true;
-        const cell = board[r][c];
+        const cell = board[r * COLS + c];
+        cell.element.classList.add('revealed');
+        cell.isRevealed = true;
 
         if (cell.hasMine) {
-            cell.classList.add('revealed', 'mine');
+            cell.element.classList.add('mine');
             gameOver = true;
             alert('游戏结束！你踩到了地雷！');
             return;
         }
 
         if (cell.adjacentMines > 0) {
-            cell.classList.add('revealed', 'number');
-            cell.textContent = cell.adjacentMines;
+            cell.element.textContent = cell.adjacentMines;
+            cell.element.classList.add('number');
         } else {
-            cell.classList.add('revealed');
             // 递归揭示空白单元格
             for (let dr = -1; dr <= 1; dr++) {
                 for (let dc = -1; dc <= 1; dc++) {
@@ -110,25 +111,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 切换标记
     function toggleFlag(r, c) {
-        if (gameOver || board[r][c].isRevealed) return;
+        if (gameOver || board[r * COLS + c].isRevealed) return;
 
-        const cell = board[r][c];
+        const cell = board[r * COLS + c];
         if (cell.flagged) {
-            cell.classList.remove('flagged');
-            cell.textContent = '';
+            cell.element.classList.remove('flagged');
+            cell.element.textContent = '';
+            cell.flagged = false;
         } else {
-            cell.classList.add('flagged');
-            cell.textContent = '🚩';
+            cell.element.classList.add('flagged');
+            cell.element.textContent = '🚩';
+            cell.flagged = true;
         }
     }
 
     // 检查是否胜利
     function checkWin() {
         let revealedCount = 0;
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-                if (board[r][c].isRevealed) revealedCount++;
-            }
+        for (let i = 0; i < board.length; i++) {
+            if (board[i].isRevealed) revealedCount++;
         }
         if (revealedCount === ROWS * COLS - MINES) {
             gameOver = true;
