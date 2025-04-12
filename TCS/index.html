@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Snake Game H5</title>
+    <style>
+        body {
+            background-color: #1f1f1f;
+            color: #fff;
+            margin: auto;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-box {
+            background-color: #fff;
+            width: fit-content;
+            min-width: 400px;
+            padding: 20px 35px;
+            display: none;
+        }
+
+        #start-page {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #start-button {
+            font-size: 15pt;
+            color: #fff;
+            border: 2px solid #fff;
+            background: none;
+            padding: 8px 20px;
+            cursor: pointer;
+        }
+
+        #start-button:hover {
+            color: #afafaf;
+            border-color: #afafaf;
+        }
+
+        #score-box {
+            color: #1f1f1f;
+            font-size: x-large;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        #main-box {
+            height: fit-content;
+            width: fit-content;
+        }
+
+        #game-canvas {
+            width: 420px;
+            height: 420px;
+            background-color: #2a2a2a;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="start-page">
+            <h1 style="font-size:30pt;margin-bottom: 100px;">贪吃蛇H5 V.1.0</h1>
+            <button id="start-button">开始游戏</button>
+            <br />
+            <a>develope by CoderMeowHacker</a>
+        </div>
+        <div id="game-box">
+            <div id="score-box">SCORE:<span id="game-score">0</span></div>
+            <br />
+            <div id="main-box">
+                <canvas id="game-canvas" height="400vh" width="400vh"></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        /** This is the init setting of game. */
+        const canvas = document.getElementById("game-canvas");
+        const score_element = document.getElementById("game-score");
+        const snake_body_color = "#cf2128";
+        const snake_head_color = "#ef3148";
+        const food_color = "#1faf0f";
+        const default_head_pos = [11, 10];
+        const default_body_len = 1;
+        const default_direct = 'r';
+        const difficulty = 200;
+        const map_width = 20;
+        const move_key = {
+            'r': {
+                'key': 'x',
+                'step': 1
+            },
+            'l': {
+                'key': 'x',
+                'step': -1
+            },
+            'u': {
+                'key': 'y',
+                'step': -1
+            },
+            'd': {
+                'key': 'y',
+                'step': 1
+            }
+        }
+        const direct_key = {
+            'ArrowRight': 'r',
+            'ArrowLeft': 'l',
+            'ArrowUp': 'u',
+            'ArrowDown': 'd',
+            'w': 'u',
+            'a': 'l',
+            'd': 'r',
+            's': 'd'
+        }
+        const prevent_key = {
+            'r': 'l',
+            'l': 'r',
+            'u': 'd',
+            'd': 'u'
+        }
+
+        /** The Game Attribute Model */
+        function Game_Attr(a, b, c) {
+            this.snake_body_color = a;
+            this.snake_head_color = b;
+            this.food_color = c;
+        }
+
+        /** The Vec model(To mark position and direction) */
+        class Vec {
+            constructor(x, y) {
+                this.x = x ? x : 0, this.y = y ? y : 0;
+            }
+            copy(a) {
+                this.x = a.x, this.y = a.y;
+            }
+            equal(a) {
+                return this.x == a.x && this.y == a.y;
+            }
+            //Other methods... (Maybe will be created in the future)
+        }
+
+        /** The Snake Model */
+        class Snake {
+            constructor() {
+                this.body_units = new Array();
+                this.head = new Vec(default_head_pos[0], default_head_pos[1]);
+            }
+        }
+
+        /** The Game State Model */
+        function Game_State() {
+            this.direction = default_direct; //Snake's direction (left: l |right: r |up: u |down: d)
+            this.score = 0;
+            this.snake = new Snake();
+            this.food_pos = new Vec();
+            this.key_queue = new Array();
+        }
+
+        /** The renderer class */
+        class Renderer {
+            constructor(canvas, snake) {
+                //TODO: The renderer class should be finished.
+                this.canvas = canvas;
+                this.canvas_ctx = canvas.getContext("2d");
+            }
+            render(snake, score, food_pos) {
+                this.clean();
+                this.drawSnake(snake);
+                this.drawFood(food_pos);
+                //render score
+                score_element.innerText = score;
+            }
+            drawSnake(snake) {
+                //draw head
+                this.createBlock(snake.head, snake_head_color);
+                let a = snake.body_units;
+                for (let i = 0; i < a.length; i++)this.createBlock(a[i], snake_body_color);
+            }
+            drawFood(pos) {
+                this.createBlock(pos, food_color);
+            }
+            createBlock(pos, color) {
+                let bx = this.canvas.width / map_width, by = this.canvas.height / map_width;
+                this.canvas_ctx.fillStyle = color;
+                this.canvas_ctx.fillRect(pos.x * bx, pos.y * by, bx, by);
+            }
+            clean() {
+                this.canvas_ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            //...
+        }
+
+        /** The Main Game Class */
+        class Game {
+            constructor() {
+                this.canvas = canvas;
+                this.attribute;
+                this.state;
+                this.renderer = new Renderer(canvas);
+                this.interval;
+                this.Load();
+            }
+            /** Load the basic construction */
+            Load() {
+                this.played = false;
+                this.listeners = new Array();
+            }
+            /** Init game method */
+            Init() {
+                this.attribute = new Game_Attr(snake_body_color, snake_head_color, food_color);
+                this.state = new Game_State();
+                //Init body
+                for (let i = 1; i <= default_body_len; i++) {
+                    let a = this.state.snake.head;
+                    this.state.snake.body_units.push(new Vec(((a.x - i >= 0) ? (a.x - i) : (map_width - Math.abs(a.x - i) % map_width)), a.y));
+                }
+            }
+            /** Start the game */
+            Play() {
+                //create Game Interval
+                this.createFood();
+                this.interval = this.createInterval();
+                this.renderer.render(this.state.snake, this.state.score, this.state.food_pos);
+                this.addKeyListeners();
+            }
+            createInterval() {
+                return setInterval(() => {
+                    this.moveSnake();
+                    this.renderer.render(this.state.snake, this.state.score, this.state.food_pos);
+                }, difficulty);
+            }
+            moveSnake() {
+                if (this.state.key_queue.length > 0) this.state.direction = this.state.key_queue.shift(); //change
+                let a = this.state.snake.head;
+                this.state.snake.body_units.unshift(new Vec(this.state.snake.head.x, this.state.snake.head.y));
+                if ((a[move_key[this.state.direction].key] + move_key[this.state.direction].step) >= 0) a[move_key[this.state.direction].key] = (a[move_key[this.state.direction].key] + move_key[this.state.direction].step) % 20;
+                else a[move_key[this.state.direction].key] = 20 + (a[move_key[this.state.direction].key] + move_key[this.state.direction].step) % 20;
+                //碰撞检测
+                if (this.state.snake.body_units.find(e => e.equal(this.state.snake.head))) {
+                    alert("Game Over! Your score is:" + this.state.score);
+                    this.reload();
+                } else if (this.state.snake.head.equal(this.state.food_pos)) {
+                    this.state.score++;
+                    this.createFood();
+                } else if (this.state.snake.body_units.length > 1) this.state.snake.body_units.pop();
+            }
+            createFood() {
+                let pos;
+                do {
+                    pos = new Vec(Math.floor(Math.random() * 20), Math.floor(Math.random() * 20));
+                } while (this.state.snake.body_units.find(e => e.equal(pos)));
+                this.state.food_pos = pos;
+            }
+            addKeyListeners() {
+                let a = (ev) => {
+                    if (prevent_key[(this.state.key_queue.length > 0) ? (this.state.key_queue.at(-1)) : (this.state.direction)] == direct_key[ev.key] || !direct_key[ev.key]) return;
+                    this.state.key_queue.push(direct_key[ev.key]);
+                };
+                this.listeners.push(['keyup', a]);
+                window.addEventListener('keyup', a);
+            }
+            reload() {
+                clearInterval(this.interval);
+                for (let i = 0; i < this.listeners.length; i++)window.removeEventListener(this.listeners[i][0], this.listeners[i][1]);
+                this.Load();
+                this.Init();
+                this.Play();
+            }
+            //Other Methods (Maybe will be created in the future)
+        };
+
+        //Main Function
+        (function () {
+            Game = new Game();
+            Game.Init(); //init the game
+            document.getElementById("start-button").addEventListener("mouseup", function () {
+                document.getElementById("start-page").remove();
+                document.getElementById("game-box").style.display = "block";
+                Game.Play();
+            })
+        }());
+
+    </script>
+</body>
+
+</html>
